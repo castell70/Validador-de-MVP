@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de MVP</title>
+    <!-- Import map for esm.sh packages -->
+    <script type="importmap">
+    {
+      "imports": {
+        "jspdf": "https://esm.sh/jspdf@2.5.1"
+      }
+    }
+    </script>
+
+    <!-- Module loader: import jspdf via esm.sh and attach to window -->
+    <script type="module">
+      import jspdf from "jspdf";
+      const jsPDF = jspdf.jsPDF || jspdf;
+      window.jsPDF = jsPDF;
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2E86DE;
+            --secondary: #F5F7FA;
+            --text: #333;
+            --border: #D1D8E0;
+            --accent: #FF8A00;
+            --card: #ffffff;
+            --muted: #6b7280;
+            --shadow: 0 8px 24px rgba(11,22,40,0.06);
+            --touch: 48px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html,body { height: 100%; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--secondary);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        header { position: sticky; top: 0; z-index: 100; }
+
+        .title-bar {
+            background-color: var(--accent);
+            color: #ffffff;
+            padding: 0.85rem 1rem;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+        }
+
+        .title-bar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .title-bar-left {
+            display:flex;
+            gap:12px;
+            align-items:center;
+        }
+
+        .title-bar-logo {
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: 0.02em;
+        }
+
+        .menu-bar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        /* animated "Powered by" moved into title bar and styled there */
+        .title-bar-right .powered-anim {
+            margin-left: auto;
+            text-align: right;
+            font-weight: 700;
+            color: rgba(255,255,255,0.95);
+            animation: blinkSoft 3.2s ease-in-out infinite;
+            -webkit-animation: blinkSoft 3.2s ease-in-out infinite;
+            opacity: 1;
+            font-size: 0.95rem;
+        }
+
+        /* Overall layout: sidebar + main */
+        .container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 18px auto;
+            padding: 0 16px 32px;
+            align-items: start;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+            height: fit-content;
+        }
+
+        .sidebar .nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar button.section-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: none;
+            border: 1px solid transparent;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text);
+            transition: all 0.18s ease;
+            min-height: var(--touch);
+        }
+        .sidebar button.section-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(46,134,222,0.08);
+            border-color: rgba(46,134,222,0.12);
+            background: rgba(46,134,222,0.04);
+        }
+        .sidebar .menu-footer {
+            margin-top:12px;
+            display:flex;
+            justify-content:center;
+            font-size:0.85rem;
+            color:var(--muted);
+            opacity:0.95;
+        }
+
+        /* Main panel */
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .hero {
+            display:flex;
+            gap:18px;
+            align-items:center;
+            justify-content:space-between;
+            background: linear-gradient(180deg, #fff, #fbfdff);
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .hero-left {
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+        }
+
+        .hero h1 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 0;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .hero-actions {
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: var(--touch);
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: var(--primary); color:#fff; }
+        .btn-ghost { background: transparent; color:var(--primary); border:1px solid rgba(46,134,222,0.12); }
+        .btn-secondary { background: #f3f6fb; color: var(--text); }
+
+        /* Standardize hero action buttons: same size and centered content */
+        .hero-actions .btn {
+            min-width: 160px;
+            justify-content: center;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+        }
+        /* Distinct color variants for the three main actions */
+        .btn-load {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(255,138,0,0.18);
+            border: none;
+        }
+        .btn-reset {
+            background: #ffffff;
+            color: var(--text);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        .btn-export {
+            background: #2ecc71;
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 20px rgba(46,204,113,0.12);
+        }
+
+        /* Card containers */
+        .form-container {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(11,22,40,0.04);
+            border: 1px solid var(--border);
+        }
+
+        section { margin-bottom: 1rem; }
+
+        h2 { color: var(--primary); margin-bottom: 0.8rem; font-size: 1.1rem; }
+
+        .tooltip { position: relative; display: inline-block; margin-left: 10px; cursor: help; font-size: 1rem; width:20px; height:20px; text-align:center; background-color:#e2e7ee; border-radius:50%; }
+        .tooltip::after {
+            content: attr(data-text);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 260px;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.18s;
+            z-index: 1;
+        }
+        .tooltip:hover::after { visibility: visible; opacity: 1; }
+
+        .form-group { margin-bottom: 1rem; }
+        label { display:block; margin-bottom:6px; font-weight:500; font-size:0.95rem; }
+        .required::after { content:'*'; color:red; margin-left:4px; }
+
+        input[type="text"], input[type="date"], textarea, select {
+            width:100%;
+            padding:10px 12px;
+            border:1px solid var(--border);
+            border-radius:8px;
+            font-family:inherit;
+            font-size:0.95rem;
+            transition: box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline:none;
+            border-color: var(--primary);
+            box-shadow: 0 6px 18px rgba(46,134,222,0.08);
+        }
+        textarea { min-height:110px; resize:vertical; }
+
+        .metrics-table { width:100%; border-collapse:collapse; margin: 0.5rem 0 1rem; }
+        .metrics-table th, .metrics-table td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); }
+        .metrics-table input { width:100%; border:none; padding:8px; background:transparent; }
+
+        .feedback-item { margin-bottom:0.75rem; padding:12px; border:1px solid var(--border); border-radius:8px; background:#fbfdff; }
+        .feedback-input { flex:1; }
+
+        .btn-container { display:flex; gap:12px; margin-top:6px; flex-wrap:wrap; }
+        button { font-family:inherit; }
+
+        .alert { padding:10px; margin-bottom:8px; border-radius:6px; font-size:0.9rem; display:none; }
+        .alert-error { background:#fff0f0; border:1px solid #f8d7da; color:#c53030; }
+
+        .floating-help {
+            position: fixed;
+            bottom: 18px;
+            right: 18px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+            border: none;
+            cursor: pointer;
+            z-index: 120;
+            transition: transform 0.18s ease;
+        }
+        .floating-help:hover { transform: translateY(-4px); }
+
+        /* Section window modal */
+        .section-window { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 200; padding: 20px; }
+        .section-window.active { display:flex; }
+        .section-panel { width:100%; max-width:900px; background:#fff; border-radius:10px; padding:20px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); max-height:90vh; overflow:auto; }
+        .section-panel .close-btn { float:right; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text); }
+
+        /* Mobile-first and responsive tweaks */
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; gap:12px; margin: 12px; padding-bottom:28px; }
+            .sidebar { order: 2; display:flex; flex-direction:row; gap:8px; overflow:auto; padding:10px; border-radius:10px; }
+            .sidebar .nav-list { flex-direction:row; gap:8px; }
+            .sidebar button.section-btn { min-width: 140px; white-space:nowrap; }
+            .hero { flex-direction:column; align-items:flex-start; gap:12px; }
+            .hero-actions { width:100%; display:flex; gap:8px; }
+            .menu-toggle { display:block; }
+        }
+
+        @media (max-width: 480px) {
+            .title-bar-logo { font-size: 1rem; }
+            .title-bar-subtitle { font-size: 0.82rem; padding:4px 8px; }
+            .floating-help { width:50px; height:50px; right:14px; bottom:14px; }
+        }
+
+        @keyframes blinkSoft {
+            0% { opacity: 0.15; filter: brightness(0.8); }
+            40% { opacity: 1; filter: brightness(1); }
+            60% { opacity: 1; filter: brightness(1); }
+            100% { opacity: 0.15; filter: brightness(0.8); }
+        }
+        @-webkit-keyframes blinkSoft {
+            0% { opacity: 0.15; filter: brightness(0.8); }
+            40% { opacity: 1; filter: brightness(1); }
+            60% { opacity: 1; filter: brightness(1); }
+            100% { opacity: 0.15; filter: brightness(0.8); }
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="title-bar">
+            <div class="title-bar-content">
+                <div class="title-bar-left">
+                    <div class="title-bar-logo">MVP Validator</div>
+                    <!-- subtitle removed; animated "Powered by" moved to the right -->
+                </div>
+                <div class="title-bar-right">
+                    <div class="powered-anim">Powered by ITCPO</div>
+                </div>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:flex-end;padding:10px 16px;">
+                <!-- menu bar no longer displays the Powered by text -->
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <aside class="sidebar" aria-hidden="false">
+            <nav class="nav-list" id="main-nav">
+                <button class="section-btn open-section" data-section="basics-window">Datos Básicos</button>
+                <button class="section-btn open-section" data-section="hypothesis-window">Hipótesis</button>
+                <button class="section-btn open-section" data-section="metrics-window">Métricas</button>
+                <button class="section-btn open-section" data-section="type-window">Tipo de MVP</button>
+                <button class="section-btn open-section" data-section="feedback-window">Feedback</button>
+            </nav>
+            <div class="menu-footer">Use "Cargar Ejemplo" para iniciar — la app comienza vacía</div>
+        </aside>
+
+        <section class="main-panel" aria-live="polite">
+            <div class="hero">
+                <div class="hero-left">
+                    <h1>Sistema de Validación de MVP</h1>
+                    <p>Gestiona y valida Productos Mínimos Viables con un flujo claro: carga un ejemplo para ver el conjunto completo de datos.</p>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-load" id="load-example" type="button">Cargar Ejemplo</button>
+                    <button class="btn btn-reset" id="reset-data" type="button">Reiniciar</button>
+                    <button class="btn btn-export" id="export-pdf" type="button">Exportar a PDF</button>
+                </div>
+            </div>
+
+            <form id="mvp-form" class="form-container" aria-label="Formulario MVP">
+                <h2>Estado</h2>
+                <p style="color:var(--muted);margin-bottom:8px;">La aplicación inicia vacía por diseño; utiliza "Cargar Ejemplo" para rellenar todos los campos con datos ficticios.</p>
+
+                <div class="btn-container" style="margin-top:8px;">
+                    <button type="button" id="open-basics" class="btn btn-secondary" style="background:#fff;border:1px solid var(--border);">Abrir Datos Básicos</button>
+                    <button type="button" id="open-hypothesis" class="btn btn-secondary" style="background:#fff;border:1px solid var(--border);">Abrir Hipótesis</button>
+                    <button type="button" id="open-metrics" class="btn btn-secondary" style="background:#fff;border:1px solid var(--border);">Abrir Métricas</button>
+                </div>
+
+                <div class="save-status" style="margin-top:12px;color:var(--muted);font-size:0.95rem;display:block;"></div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Section windows (unchanged content but same IDs) -->
+    <div id="basics-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2>Datos Básicos <span class="tooltip" data-text="Información fundamental sobre el proyecto y equipo responsable"></span></h2>
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="project-name" class="required">Nombre del Proyecto</label>
+                    <input type="text" id="project-name" required>
+                    <div class="alert alert-error" id="project-name-alert">Este campo es obligatorio</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="project-date">Fecha de Creación</label>
+                    <input type="date" id="project-date">
+                </div>
+
+                <div class="form-group">
+                    <label for="responsible" class="required">Responsable</label>
+                    <input type="text" id="responsible" required>
+                    <div class="alert alert-error" id="responsible-alert">Este campo es obligatorio</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="hypothesis-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2>Hipótesis <span class="tooltip" data-text="Definición del problema a resolver y solución propuesta"></span></h2>
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="problem" class="required">Problema</label>
+                    <textarea id="problem" required></textarea>
+                    <div class="alert alert-error" id="problem-alert">Este campo es obligatorio</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="solution" class="required">Solución Propuesta</label>
+                    <textarea id="solution" required></textarea>
+                    <div class="alert alert-error" id="solution-alert">Este campo es obligatorio</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="metrics-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2>Métricas de Validación <span class="tooltip" data-text="Objetivos medibles y herramientas para evaluar el éxito del MVP"></span></h2>
+            <div class="form-container">
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Métrica</th>
+                            <th>Objetivo</th>
+                            <th>Herramienta de Medición</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metrics-body">
+                        <!-- starts empty until example is loaded or user adds rows -->
+                    </tbody>
+                </table>
+                <button type="button" id="add-metric" class="btn btn-secondary">Añadir Métrica</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="type-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2>Tipo de MVP <span class="tooltip" data-text="Seleccione la estrategia de producto mínimo viable"></span></h2>
+            <div class="form-container">
+                <div class="form-group">
+                    <select id="mvp-type" required>
+                        <option value="">Seleccione un tipo</option>
+                        <option value="landing">Landing Page</option>
+                        <option value="concierge">Concierge MVP</option>
+                        <option value="prototype">Prototipo</option>
+                        <option value="wizard">Wizard of Oz</option>
+                        <option value="other">Otro</option>
+                    </select>
+                    <div class="alert alert-error" id="mvp-type-alert">Seleccione un tipo de MVP</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2>Registro de Feedback (Análisis) <span class="tooltip" data-text="Análisis automatizado basado en los datos del formulario"></span></h2>
+            <div class="form-container">
+                <div id="feedback-container"></div>
+                <div style="margin-top:10px;display:flex;gap:8px;">
+                    <button type="button" id="analyze-feedback" class="btn btn-primary">Generar Análisis</button>
+                    <button type="button" id="clear-analysis" class="btn btn-secondary">Limpiar Análisis</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help modal -->
+    <div id="help-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2>Guía rápida - Uso del validador de MVP</h2>
+            <div class="form-container">
+                <p><strong>1. Cargar Ejemplo:</strong> Presiona "Cargar Ejemplo" para llenar todos los campos con datos ficticios que ilustran el flujo completo.</p>
+                <p><strong>2. Datos Básicos:</strong> Completa nombre, fecha y responsable del proyecto.</p>
+                <p><strong>3. Hipótesis:</strong> Describe el problema y la solución propuesta.</p>
+                <p><strong>4. Métricas:</strong> Añade métricas, objetivos y herramientas para medir el éxito del MVP.</p>
+                <p><strong>5. Tipo de MVP:</strong> Selecciona la estrategia (Landing, Concierge, Prototype, Wizard, etc.).</p>
+                <p><strong>6. Feedback (Análisis):</strong> En la pestaña Feedback, pulsa "Generar Análisis" para que la aplicación sintetice automáticamente la información ingresada en un informe de observaciones y recomendaciones.</p>
+                <p><strong>7. Exportar:</strong> Usa "Exportar a PDF" para descargar un resumen estructurado.</p>
+                <p>Nota: la aplicación inicia vacía por diseño; usa "Cargar Ejemplo" si quieres ver un conjunto completo de datos de referencia.</p>
+            </div>
+        </div>
+    </div>
+
+    <button class="floating-help" type="button" id="help-btn" aria-label="Ayuda">?</button>
+
+    <!-- Confirmation / Message modal using text-box (cuadro de texto) -->
+    <div id="message-window" class="section-window" aria-hidden="true">
+        <div class="section-panel" role="dialog" aria-modal="true">
+            <button class="close-btn" data-close>&times;</button>
+            <h2 id="message-title">Aviso</h2>
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="message-box">Mensaje</label>
+                    <textarea id="message-box" readonly style="min-height:120px;"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button type="button" id="message-cancel" class="btn btn-ghost">Cancelar</button>
+                    <button type="button" id="message-confirm" class="btn btn-primary">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado del formulario
+        const initialState = {
+            projectName: '',
+            projectDate: '',
+            responsible: '',
+            problem: '',
+            solution: '',
+            metrics: [],
+            mvpType: '',
+            feedback: [],
+            lastSaved: null
+        };
+
+        // Referencias del DOM
+        const dom = {
+            form: document.getElementById('mvp-form'),
+            metricsBody: document.getElementById('metrics-body'),
+            feedbackContainer: document.getElementById('feedback-container'),
+            saveStatus: document.querySelector('.save-status')
+        };
+
+        // Inicializar UI
+        function initUI() {
+            // Ensure a clean start: remove any previously saved data and reset UI
+            localStorage.removeItem('mvpFormData');
+            setupEventListeners();
+            clearFormFields();
+            setupMobileMenu();
+            setupSectionWindows();
+        }
+
+        function setupMobileMenu() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const mainNav = document.getElementById('main-nav');
+            if (!menuToggle) return;
+            menuToggle.addEventListener('click', () => {
+                mainNav.classList.toggle('active');
+            });
+            document.querySelectorAll('nav a, nav button.open-section').forEach(link => {
+                link.addEventListener('click', () => {
+                    mainNav.classList.remove('active');
+                });
+            });
+        }
+
+        function setupSectionWindows() {
+            document.querySelectorAll('button.open-section').forEach(btn => {
+                const id = btn.getAttribute('data-section');
+                const win = document.getElementById(id);
+                btn.addEventListener('click', () => openWindow(win));
+            });
+            // also wire the small "open-" quick buttons in main panel
+            document.getElementById('open-basics').addEventListener('click', ()=> openWindow(document.getElementById('basics-window')));
+            document.getElementById('open-hypothesis').addEventListener('click', ()=> openWindow(document.getElementById('hypothesis-window')));
+            document.getElementById('open-metrics').addEventListener('click', ()=> openWindow(document.getElementById('metrics-window')));
+
+            document.querySelectorAll('.section-window [data-close]').forEach(btn => {
+                btn.addEventListener('click', () => closeWindow(btn.closest('.section-window')));
+            });
+            document.querySelectorAll('.section-window').forEach(win => {
+                win.addEventListener('click', (e) => { if (e.target === win) closeWindow(win); });
+            });
+            document.getElementById('help-btn').addEventListener('click', () => openWindow(document.getElementById('help-window')));
+            // message window close wiring
+            const msgWin = document.getElementById('message-window');
+            document.querySelector('#message-window [data-close]').addEventListener('click', () => closeWindow(msgWin));
+            document.getElementById('message-cancel').addEventListener('click', () => closeWindow(msgWin));
+            document.getElementById('message-confirm').addEventListener('click', () => {
+                const action = msgWin.getAttribute('data-action');
+                if (action === 'reset') performReset();
+                closeWindow(msgWin);
+            });
+        }
+        function openWindow(win) {
+            if (!win) return;
+            win.classList.add('active');
+            win.setAttribute('aria-hidden','false');
+            const first = win.querySelector('input, textarea, select, button');
+            if (first) first.focus();
+        }
+        function closeWindow(win) {
+            if (!win) return;
+            win.classList.remove('active');
+            win.setAttribute('aria-hidden','true');
+        }
+
+        function addMetricRow(metric = {}) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" placeholder="Ej: Tasa de conversión"></td>
+                <td><input type="text" placeholder="Ej: >15% en primer mes"></td>
+                <td><input type="text" placeholder="Ej: Google Analytics"></td>
+                <td><button type="button" class="btn btn-danger delete-btn" style="background:#ff6b6b;color:#fff;border-radius:8px;padding:8px 10px;border:none;">Eliminar</button></td>
+            `;
+            dom.metricsBody.appendChild(row);
+
+            const inputs = row.querySelectorAll('input');
+            if (metric && inputs.length === 3) {
+                inputs[0].value = metric.metric || '';
+                inputs[1].value = metric.objective || '';
+                inputs[2].value = metric.tool || '';
+            }
+
+            row.querySelector('.delete-btn').addEventListener('click', () => {
+                row.remove();
+                saveFormData();
+            });
+            row.querySelectorAll('input').forEach(i=>i.addEventListener('input', saveFormData));
+        }
+
+        function setupEventListeners() {
+            document.getElementById('add-metric').addEventListener('click', () => { addMetricRow(); saveFormData(); });
+            document.getElementById('analyze-feedback').addEventListener('click', generateAnalysis);
+            document.getElementById('clear-analysis').addEventListener('click', () => { dom.feedbackContainer.innerHTML = ''; });
+            document.getElementById('load-example').addEventListener('click', fillExampleData);
+            document.getElementById('reset-data').addEventListener('click', promptReset);
+            document.getElementById('export-pdf').addEventListener('click', () => { if (validateForm()) exportToPDF(); });
+
+            dom.form.querySelectorAll('input, textarea, select').forEach(input => {
+                input.addEventListener('input', saveFormData);
+            });
+        }
+
+        function saveFormData() {
+            if (!validateForm()) return;
+            const formData = {
+                projectName: document.getElementById('project-name').value,
+                projectDate: document.getElementById('project-date').value,
+                responsible: document.getElementById('responsible').value,
+                problem: document.getElementById('problem').value,
+                solution: document.getElementById('solution').value,
+                metrics: [],
+                mvpType: document.getElementById('mvp-type').value,
+                feedback: [],
+                lastSaved: new Date().toISOString()
+            };
+
+            dom.metricsBody.querySelectorAll('tr').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if (inputs.length === 3) {
+                    formData.metrics.push({
+                        metric: inputs[0].value,
+                        objective: inputs[1].value,
+                        tool: inputs[2].value
+                    });
+                }
+            });
+
+            dom.feedbackContainer.querySelectorAll('.analysis-block').forEach(item => {
+                formData.feedback.push(item.textContent || item.innerText);
+            });
+
+            localStorage.setItem('mvpFormData', JSON.stringify(formData));
+            const date = new Date().toLocaleTimeString();
+            dom.saveStatus.textContent = `Guardado automáticamente a las ${date}`;
+            dom.saveStatus.style.display = 'block';
+            setTimeout(() => { dom.saveStatus.style.display = 'none'; }, 3000);
+        }
+
+        function loadSavedData() {
+            const savedData = localStorage.getItem('mvpFormData');
+            if (!savedData) return;
+            const formData = JSON.parse(savedData);
+            document.getElementById('project-name').value = formData.projectName || '';
+            document.getElementById('project-date').value = formData.projectDate || '';
+            document.getElementById('responsible').value = formData.responsible || '';
+            document.getElementById('problem').value = formData.problem || '';
+            document.getElementById('solution').value = formData.solution || '';
+            document.getElementById('mvp-type').value = formData.mvpType || '';
+
+            dom.metricsBody.innerHTML = '';
+            (formData.metrics || []).forEach(metric => addMetricRow(metric));
+
+            dom.feedbackContainer.innerHTML = '';
+            (formData.feedback || []).forEach(fb => {
+                const block = document.createElement('div');
+                block.className = 'analysis-block feedback-item';
+                block.textContent = fb;
+                dom.feedbackContainer.appendChild(block);
+            });
+
+            dom.saveStatus.textContent = `Último guardado: ${new Date(formData.lastSaved).toLocaleString()}`;
+            dom.saveStatus.style.display = 'block';
+        }
+
+        function fillExampleData() {
+            document.getElementById('project-name').value = 'Streaming Edu';
+            document.getElementById('project-date').value = '2023-10-15';
+            document.getElementById('responsible').value = 'Ana García';
+            document.getElementById('problem').value = 'Los estudiantes tienen dificultad para encontrar tutores especializados en áreas técnicas específicas.';
+            document.getElementById('solution').value = 'Plataforma de streaming educativo que conecta estudiantes con expertos para sesiones 1:1 en tiempo real.';
+            document.getElementById('mvp-type').value = 'wizard';
+
+            dom.metricsBody.innerHTML = '';
+            dom.feedbackContainer.innerHTML = '';
+
+            const exampleMetrics = [
+                { metric: 'Tasa de registro', objective: '15% de visita → registro', tool: 'Google Analytics' },
+                { metric: 'Sesiones por usuario', objective: '≥2 sesiones/mes', tool: 'App Metrica' },
+                { metric: 'Satisfacción', objective: 'NPS ≥ 45', tool: 'SurveyMonkey' }
+            ];
+            exampleMetrics.forEach(metric => addMetricRow(metric));
+            saveFormData();
+
+            const basicsWin = document.getElementById('basics-window');
+            if (basicsWin) openWindow(basicsWin);
+        }
+
+        // Reset workflow: show confirmation in message-window (cuadro de texto)
+        function promptReset() {
+            const msgWin = document.getElementById('message-window');
+            const box = document.getElementById('message-box');
+            const title = document.getElementById('message-title');
+            title.textContent = 'Confirmar reinicio';
+            box.value = 'Esta acción eliminará TODOS los datos ingresados y restaurará la aplicación en blanco. ¿Deseas continuar?';
+            msgWin.setAttribute('data-action','reset');
+            openWindow(msgWin);
+        }
+
+        function performReset() {
+            // Clear form fields
+            ['project-name','project-date','responsible','problem','solution','mvp-type'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            // Clear metrics and feedback
+            dom.metricsBody.innerHTML = '';
+            dom.feedbackContainer.innerHTML = '';
+            // Remove saved data
+            localStorage.removeItem('mvpFormData');
+            // Show confirmation message in the same modal as readonly text then auto-close after short delay
+            const msgWin = document.getElementById('message-window');
+            const box = document.getElementById('message-box');
+            const title = document.getElementById('message-title');
+            title.textContent = 'Reinicio completado';
+            box.value = 'Los datos han sido eliminados. La aplicación está en estado inicial.';
+            // Update saveStatus
+            dom.saveStatus.textContent = 'Datos eliminados — lista para comenzar de cero.';
+            dom.saveStatus.style.display = 'block';
+            setTimeout(() => { dom.saveStatus.style.display = 'none'; }, 3000);
+        }
+
+        function validateForm() {
+            let isValid = true;
+            document.querySelectorAll('.alert-error').forEach(alert => { alert.style.display = 'none'; });
+            const requiredFields = ['project-name','responsible','problem','solution','mvp-type'];
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field || !field.value.trim()) {
+                    const alertEl = document.getElementById(`${fieldId}-alert`);
+                    if (alertEl) alertEl.style.display = 'block';
+                    isValid = false;
+                }
+            });
+            return isValid;
+        }
+
+        /**
+         * aiAgent - Simulated free IA agent (client-side heuristic) that adapts analysis by MVP type.
+         * Returns a Promise<string> resolving with a concise AI-like analysis and prioritized recommendations.
+         */
+        function aiAgent({ name, date, resp, problem, solution, mvpType, metrics }) {
+            return new Promise((resolve) => {
+                // Simple delay to simulate network/processing
+                setTimeout(() => {
+                    const lines = [];
+                    lines.push(`Análisis AI para "${name}" (${mvpType || 'Tipo no especificado'})`);
+                    lines.push(`Resumen: ${problem.slice(0,120)}${problem.length>120?'...':''} / ${solution.slice(0,120)}${solution.length>120?'...':''}`);
+                    // Tailor content by MVP type (value is option value like 'landing','concierge','prototype','wizard','other')
+                    const t = (mvpType || '').toLowerCase();
+                    if (t.includes('landing')) {
+                        lines.push('Enfoque: Convertir tráfico en registros. Prioriza pruebas A/B en titulares, CTAs y formularios.');
+                        if (metrics.length === 0) lines.push('Métricas sugeridas: tasa de conversión, coste por lead, tasa de rebote.');
+                    } else if (t.includes('concierge')) {
+                        lines.push('Enfoque: Validación cualitativa con clientes reales — prototipa procesos manuales primero.');
+                        if (metrics.length === 0) lines.push('Métricas sugeridas: leads contactados, tasa de conversión a pago, tiempo hasta primera sesión.');
+                    } else if (t.includes('prototype')) {
+                        lines.push('Enfoque: Usabilidad y feedback temprano; realiza sesiones de prueba con observación directa.');
+                        if (metrics.length === 0) lines.push('Métricas sugeridas: tareas completadas, tiempo en tarea, intención de uso.');
+                    } else if (t.includes('wizard')) {
+                        lines.push('Enfoque: Simular funcionalidades tras bambalinas para probar la propuesta sin invertir en ingeniería.');
+                        if (metrics.length === 0) lines.push('Métricas sugeridas: ratios de activación, retención temprana, tasa de conversión de experimentos.');
+                    } else {
+                        lines.push('Enfoque: Definir claramente hipótesis y métricas prioritarias según canal y usuario objetivo.');
+                        if (metrics.length === 0) lines.push('Métricas sugeridas: adquisición, activación, retención (AARRR básicos).');
+                    }
+
+                    // Analyze metrics quality
+                    if (metrics.length >= 2) {
+                        lines.push(`Métricas detectadas: ${metrics.length} — parecen suficientes para empezar pruebas cuantitativas.`);
+                    } else if (metrics.length === 1) {
+                        lines.push('Solo 1 métrica detectada — añade al menos otra métrica complementaria (por ejemplo retención o conversión).');
+                    } else {
+                        lines.push('No se detectaron métricas definidas — prioriza al menos 2 métricas cuantificables.');
+                    }
+
+                    // Heuristic recommendations
+                    if (problem.length < 40) lines.push('Recomendación: ampliar la descripción del problema con evidencia (entrevistas, datos).');
+                    if (solution.length < 40) lines.push('Recomendación: especificar cómo se entregará la propuesta mínima y cuáles serán los criterios de éxito.');
+                    if (metrics.length > 0) lines.push('Recomendación: definir umbrales y horizontes temporales para cada métrica (ej. 30 días).');
+
+                    lines.push('Siguientes pasos (priorizados):');
+                    lines.push('1) Ejecutar 2 experimentos rápidos alineados a las métricas principales.');
+                    lines.push('2) Recoger feedback cualitativo y cuantitativo y actualizar hipótesis.');
+                    lines.push('3) Iterar en ciclos cortos (1-2 semanas).');
+
+                    resolve(lines.join('\n'));
+                }, 700); // 700ms simulated latency
+            });
+        }
+
+        async function generateAnalysis() {
+            if (!validateForm()) {
+                const fbWin = document.getElementById('feedback-window');
+                if (fbWin) openWindow(fbWin);
+                return;
+            }
+
+            const name = document.getElementById('project-name').value.trim();
+            const date = document.getElementById('project-date').value;
+            const resp = document.getElementById('responsible').value.trim();
+            const problem = document.getElementById('problem').value.trim();
+            const solution = document.getElementById('solution').value.trim();
+            const mvpTypeValue = document.getElementById('mvp-type').value;
+            const mvpTypeText = document.getElementById('mvp-type').options[document.getElementById('mvp-type').selectedIndex].text;
+
+            const metrics = [];
+            dom.metricsBody.querySelectorAll('tr').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if (inputs.length === 3) {
+                    const m = inputs[0].value.trim();
+                    const o = inputs[1].value.trim();
+                    const t = inputs[2].value.trim();
+                    if (m || o || t) metrics.push({ metric: m, objective: o, tool: t });
+                }
+            });
+
+            const aiPromptData = {
+                name,
+                date,
+                resp,
+                problem,
+                solution,
+                mvpType: mvpTypeValue,
+                metrics
+            };
+
+            // Mostrar bloque de carga temporal
+            dom.feedbackContainer.innerHTML = '';
+            const loadingBlock = document.createElement('div');
+            loadingBlock.className = 'feedback-item';
+            loadingBlock.textContent = 'Generando análisis AI adaptado al tipo de MVP...';
+            dom.feedbackContainer.appendChild(loadingBlock);
+            try {
+                const aiResult = await aiAgent(aiPromptData);
+
+                // Reemplazar carga con solo el análisis AI (en español)
+                dom.feedbackContainer.innerHTML = '';
+
+                const aiBlock = document.createElement('div');
+                aiBlock.className = 'analysis-block feedback-item';
+                const aiTitle = document.createElement('strong');
+                aiTitle.textContent = 'Análisis AI (heurístico adaptado al tipo de MVP)';
+                aiTitle.style.display = 'block';
+                aiTitle.style.marginBottom = '8px';
+                aiBlock.appendChild(aiTitle);
+
+                const meta = document.createElement('div');
+                meta.style.color = 'var(--muted)';
+                meta.style.fontSize = '0.9rem';
+                meta.style.marginBottom = '8px';
+                meta.textContent = `Proyecto: ${name}${date ? ' • Fecha: ' + date : ''} • Responsable: ${resp} • Tipo: ${mvpTypeText} • Métricas: ${metrics.length}`;
+                aiBlock.appendChild(meta);
+
+                const aiPre = document.createElement('pre');
+                aiPre.style.whiteSpace = 'pre-wrap';
+                aiPre.style.margin = 0;
+                aiPre.textContent = aiResult;
+                aiBlock.appendChild(aiPre);
+
+                const aiActions = document.createElement('div');
+                aiActions.style.display = 'flex';
+                aiActions.style.gap = '8px';
+                aiActions.style.marginTop = '8px';
+
+                const copyAiBtn = document.createElement('button');
+                copyAiBtn.type = 'button';
+                copyAiBtn.className = 'btn btn-primary';
+                copyAiBtn.textContent = 'Copiar Análisis AI';
+                copyAiBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(aiResult).then(() => {
+                        copyAiBtn.textContent = 'Copiado';
+                        setTimeout(()=> copyAiBtn.textContent = 'Copiar Análisis AI', 1500);
+                    });
+                });
+
+                aiActions.appendChild(copyAiBtn);
+                aiBlock.appendChild(aiActions);
+
+                dom.feedbackContainer.appendChild(aiBlock);
+
+                // Guardar el análisis AI en el almacenamiento para persistencia
+                saveFormData();
+                const fbWin = document.getElementById('feedback-window');
+                if (fbWin) openWindow(fbWin);
+            } catch (err) {
+                loadingBlock.textContent = 'Error generando análisis AI.';
+            }
+        }
+
+        function exportToPDF() {
+            const doc = new jsPDF();
+            const margin = 15;
+            let y = 15;
+
+            doc.setFontSize(22);
+            doc.setTextColor(46, 134, 222);
+            y += 10;
+
+            doc.setFontSize(16);
+            doc.text('Datos Básicos', margin, y);
+            y += 10;
+
+            doc.setFontSize(12);
+            const projectName = `Nombre: ${document.getElementById('project-name').value}`;
+            const projectDate = `Fecha: ${document.getElementById('project-date').value}`;
+            const responsible = `Responsable: ${document.getElementById('responsible').value}`;
+
+            doc.text(projectName, margin, y); y += 8;
+            doc.text(projectDate, margin, y); y += 8;
+            doc.text(responsible, margin, y); y += 12;
+
+            doc.setFontSize(16);
+            doc.text('Hipótesis', margin, y); y += 8;
+            doc.setFontSize(12);
+            doc.text(`Problema: ${document.getElementById('problem').value}`, margin, y); y += 8;
+            doc.text(`Solución: ${document.getElementById('solution').value}`, margin, y); y += 12;
+
+            doc.setFontSize(16);
+            doc.text('Métricas', margin, y); y += 8;
+            doc.setFontSize(12);
+            dom.metricsBody.querySelectorAll('tr').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if (inputs.length === 3) {
+                    const line = `- ${inputs[0].value} | Objetivo: ${inputs[1].value} | Herramienta: ${inputs[2].value}`;
+                    doc.text(line, margin, y); y += 8;
+                    if (y > 270) { doc.addPage(); y = 20; }
+                }
+            });
+
+            y += 8;
+            doc.setFontSize(16);
+            doc.text('Feedback (Análisis)', margin, y); y += 8;
+            doc.setFontSize(12);
+            dom.feedbackContainer.querySelectorAll('.analysis-block pre').forEach(item => {
+                const lines = item.textContent.split('\n');
+                lines.forEach(line => {
+                    doc.text(line, margin, y); y += 7;
+                    if (y > 270) { doc.addPage(); y = 20; }
+                });
+            });
+
+            doc.save(`MVP-Export-${Date.now()}.pdf`);
+        }
+
+        // Clear visible form fields, metrics and feedback to guarantee empty start
+        function clearFormFields() {
+            ['project-name','project-date','responsible','problem','solution','mvp-type'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            dom.metricsBody.innerHTML = '';
+            dom.feedbackContainer.innerHTML = '';
+            dom.saveStatus.textContent = '';
+            dom.saveStatus.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', initUI);
+    </script>
+</body>
+</html>
