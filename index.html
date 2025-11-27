@@ -229,9 +229,10 @@
             border: none;
         }
         .btn-reset {
-            background: #ffffff;
-            color: var(--text);
-            border: 1px solid rgba(0,0,0,0.06);
+            background: #e74c3c;
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 8px 20px rgba(231,76,60,0.14);
         }
         .btn-export {
             background: #2ecc71;
@@ -302,6 +303,11 @@
 
         .btn-container { display:flex; gap:12px; margin-top:6px; flex-wrap:wrap; }
         button { font-family:inherit; }
+
+        /* Estado buttons - colores distintos y texto en blanco */
+        .btn-state-basics { background:#1abc9c; color:#fff; border:none; min-width:140px; }
+        .btn-state-hypothesis { background:#e67e22; color:#fff; border:none; min-width:140px; }
+        .btn-state-metrics { background:#3498db; color:#fff; border:none; min-width:140px; }
 
         .alert { padding:10px; margin-bottom:8px; border-radius:6px; font-size:0.9rem; display:none; }
         .alert-error { background:#fff0f0; border:1px solid #f8d7da; color:#c53030; }
@@ -415,9 +421,9 @@
                 <p style="color:var(--muted);margin-bottom:8px;">La aplicación inicia vacía por diseño; utiliza "Cargar Ejemplo" para rellenar todos los campos con datos ficticios.</p>
 
                 <div class="btn-container" style="margin-top:8px;">
-                    <button type="button" id="open-basics" class="btn btn-secondary" style="background:#fff;border:1px solid var(--border);">Abrir Datos Básicos</button>
-                    <button type="button" id="open-hypothesis" class="btn btn-secondary" style="background:#fff;border:1px solid var(--border);">Abrir Hipótesis</button>
-                    <button type="button" id="open-metrics" class="btn btn-secondary" style="background:#fff;border:1px solid var(--border);">Abrir Métricas</button>
+                    <button type="button" id="open-basics" class="btn btn-state-basics">Abrir Datos Básicos</button>
+                    <button type="button" id="open-hypothesis" class="btn btn-state-hypothesis">Abrir Hipótesis</button>
+                    <button type="button" id="open-metrics" class="btn btn-state-metrics">Abrir Métricas</button>
                 </div>
 
                 <div class="save-status" style="margin-top:12px;color:var(--muted);font-size:0.95rem;display:block;"></div>
@@ -542,6 +548,13 @@
                 <p><strong>6. Feedback (Análisis):</strong> En la pestaña Feedback, pulsa "Generar Análisis" para que la aplicación sintetice automáticamente la información ingresada en un informe de observaciones y recomendaciones.</p>
                 <p><strong>7. Exportar:</strong> Usa "Exportar a PDF" para descargar un resumen estructurado.</p>
                 <p>Nota: la aplicación inicia vacía por diseño; usa "Cargar Ejemplo" si quieres ver un conjunto completo de datos de referencia.</p>
+
+                <!-- Copyright footer added as a professional styled line -->
+                <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:center;">
+                    <small style="color:var(--muted);font-size:0.85rem;">
+                        © 2025 Carlos Alfredo Castillo Flores — ITCPO. Todos los derechos reservados.
+                    </small>
+                </div>
             </div>
         </div>
     </div>
